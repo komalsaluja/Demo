@@ -1,0 +1,103 @@
+import java.io.BufferedInputStream;
+import java.io.DataOutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class GoBackN_Server 
+{
+	public static void main(String[] args) throws Exception 
+	{
+		System.out.println("--------------Server---------------");
+		System.out.println("Waiting for conection...");
+		InetAddress address=InetAddress.getByName("Localhost");
+		ServerSocket serverSocket=new ServerSocket(9999);
+		
+		Socket client=new Socket();
+		client=serverSocket.accept();
+		
+		BufferedInputStream in=new BufferedInputStream(client.getInputStream());
+		DataOutputStream out=new DataOutputStream(client.getOutputStream());
+		
+		System.out.println("Request received for sending frames...");
+		int framecnt = in.read();
+		boolean f[]=new boolean[framecnt];
+		
+		int choice=in.read(); //error or no error
+		
+		System.out.println("Sending...");
+		
+		if(choice==0)
+		{
+			for(int i=0;i<framecnt;i++)
+			{
+				System.out.println("Sending frame number "+i);
+				out.write(i);
+				out.flush();
+				System.out.println("Waiting for acknowlwdgement...");
+				try {
+					Thread.sleep(7000);
+				}
+				catch(Exception e) {
+					e.printStackTrace();
+				}
+				int a=in.read();
+				System.out.println("Received acknowlwdgement for frame number "+i+"as "+a);
+			}
+			out.flush();
+		}
+		else  //error case
+		{
+			for(int i=0;i<framecnt;++i)
+			{
+				if(i==2)
+				{
+					System.out.println("Sending frame number "+i);
+				}
+				else 
+				{
+					System.out.println("Sending frame number "+i);
+					out.write(i);
+					out.flush();
+					System.out.println("Waiting for acknowlwdgement...");
+					try {
+						Thread.sleep(7000);
+					}
+					catch(Exception e) {
+						e.printStackTrace();
+					}
+					int a=in.read();
+					if(a!=255)
+					{
+						System.out.println("Received acknowlwdgement for frame number "+i+"as "+a);
+						f[i]=true;
+					}
+				}
+			}
+			
+			for(int a=0;a<framecnt;++a) {
+				if(f[a]=false)
+				{
+					System.out.println("Resending frame number "+a);
+					out.write(a);
+					out.flush();
+					System.out.println("Waiting for acknowlwdgement...");
+				
+				try {
+					Thread.sleep(5000);
+				}
+				catch(Exception e) {
+					e.printStackTrace();
+				}
+				int b=in.read();
+				System.out.println("Received acknowlwdgement for frame number "+a+"as "+b);
+				f[a]=true;
+				}
+			}
+		out.flush();
+		}
+		in.close();
+		out.close();
+		System.out.println("Quiting");		
+	}
+}
